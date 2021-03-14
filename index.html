@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>shiny-animation-viewer</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+            }
+            body,
+            html {
+                background-color: #000000;
+                height: 100%;
+            }
+            canvas {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+            }
+            div {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                width: 100%;
+            }
+            div span {
+                color: #fff;
+                margin-right: 5px;
+            }
+            div select {
+                margin-right: 20px;
+            }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+        <script src="http://esotericsoftware.com/files/runtimes/spine-ts/build/spine-webgl.js"></script>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <div>
+            <span>File:</span
+            ><select id="skeletonList"></select>
+            <span>Animation:</span
+            ><select id="animationList"></select>
+            <span>Skin:</span
+            ><select id="skinList"></select>
+            <span>Background Color:</span>
+            <input id="color-picker" type="color">
+        </div>
+        <script src="main.js"></script>
+    </body>
+</html>
