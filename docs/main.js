@@ -2,42 +2,41 @@ var lastFrameTime = Date.now() / 1000;
 var canvas;
 var shader;
 var batcher;
-var gl;
+var WebGL;
 var mvp = new spine.webgl.Matrix4();
 var assetManager;
 var skeletonRenderer;
-var debugRenderer;
 var shapes;
 var skeletons = {};
 var activeSkeleton = "sd/001/data";
 
-let COLOR = [0, 0, 0];
+let backgroundColor = [0, 0, 0];
 
 const SpineList = ["sd", "stand"];
 
-function init() {
+function Init() {
     // Setup canvas and WebGL context. We pass alpha: false to canvas.getContext() so we don't use premultiplied alpha when
     // loading textures. That is handled separately by PolygonBatcher.
     canvas = document.getElementById("canvas");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     var config = { alpha: false };
-    gl =
+    WebGL =
         canvas.getContext("webgl", config) ||
         canvas.getContext("experimental-webgl", config);
-    if (!gl) {
+    if (!WebGL) {
         alert("WebGL is unavailable.");
         return;
     }
 
     // Create a simple shader, mesh, model-view-projection matrix and SkeletonRenderer.
-    // shader = spine.webgl.Shader.newTwoColoredTextured(gl);
-    shader = spine.webgl.Shader.newColoredTextured(gl);
+    shader = spine.webgl.Shader.newColoredTextured(WebGL);
 
-    batcher = new spine.webgl.PolygonBatcher(gl, false);
-    skeletonRenderer = new spine.webgl.SkeletonRenderer(gl, false);
-    shapes = new spine.webgl.ShapeRenderer(gl);
-    assetManager = new spine.webgl.AssetManager(gl);
+    skeletonRenderer = new spine.webgl.SkeletonRenderer(WebGL, false);
+    assetManager = new spine.webgl.AssetManager(WebGL);
+    batcher = new spine.webgl.PolygonBatcher(WebGL, false);
+    shapes = new spine.webgl.ShapeRenderer(WebGL);
+
 
     mvp.ortho2d(0, 0, canvas.width - 1, canvas.height - 1);
 
@@ -53,16 +52,16 @@ function init() {
         }
     }
 
-    requestAnimationFrame(load);
+    requestAnimationFrame(Load);
 }
 
-function load() {
+function Load() {
     // Wait until the AssetManager has loaded all resources, then load the skeletons.
     if (assetManager.isLoadingComplete()) {
         for (let subDir of SpineList) {
             for (let i = 0; i <= 23; i++) {
                 const path = `${subDir}/${_.padStart(i, 3, 0)}/data`;
-                skeletons[path] = loadSkeleton(
+                skeletons[path] = LoadSkeleton(
                     path,
                     subDir === "sd" && i == 0 ? "talk_wait" : "wait",
                     false,
@@ -71,16 +70,14 @@ function load() {
             }
         }
 
-        setupUI();
-        requestAnimationFrame(render);
+        SetupUI();
+        requestAnimationFrame(Render);
     } else {
-        requestAnimationFrame(load);
+        requestAnimationFrame(Load);
     }
 }
 
-function loadSkeleton(name, initialAnimation, premultipliedAlpha, skin) {
-    if (skin === undefined) skin = "default";
-
+function LoadSkeleton(name, initialAnimation, premultipliedAlpha, skin = "default") {
     // Load the texture atlas using name.atlas and name.png from the AssetManager.
     // The function passed to TextureAtlas is used to resolve relative paths.
     atlas = new spine.TextureAtlas(
@@ -112,7 +109,7 @@ function loadSkeleton(name, initialAnimation, premultipliedAlpha, skin) {
 
     var skeleton = new spine.Skeleton(skeletonData);
     skeleton.setSkinByName(skin);
-    var bounds = calculateBounds(skeleton);
+    var bounds = CalculateBounds(skeleton);
 
     // Create an AnimationState, and set the initial animation in looping mode.
     animationStateData = new spine.AnimationStateData(skeleton.data);
@@ -158,7 +155,7 @@ function loadSkeleton(name, initialAnimation, premultipliedAlpha, skin) {
     };
 }
 
-function calculateBounds(skeleton) {
+function CalculateBounds(skeleton) {
     skeleton.setToSetupPose();
     skeleton.updateWorldTransform();
     var offset = new spine.Vector2();
@@ -167,7 +164,7 @@ function calculateBounds(skeleton) {
     return { offset: offset, size: size };
 }
 
-function setupUI() {
+function SetupUI() {
     var skeletonList = $("#skeletonList");
     for (var skeletonName in skeletons) {
         var option = $("<option></option>");
@@ -228,16 +225,16 @@ function setupUI() {
     setupSkinUI();
 }
 
-function render() {
+function Render() {
     var now = Date.now() / 1000;
     var delta = now - lastFrameTime;
     lastFrameTime = now;
 
     // Update the MVP matrix to adjust for canvas size changes
-    resize();
+    Resize();
 
-    gl.clearColor(...COLOR, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    WebGL.clearColor(...backgroundColor, 1);
+    WebGL.clear(WebGL.COLOR_BUFFER_BIT);
 
     // Apply the animation state based on the delta time.
     var state = skeletons[activeSkeleton].state;
@@ -260,19 +257,10 @@ function render() {
 
     shader.unbind();
 
-    // draw debug information
-    // debugShader.bind();
-    // debugShader.setUniform4x4f(spine.webgl.Shader.MVP_MATRIX, mvp.values);
-    // debugRenderer.premultipliedAlpha = premultipliedAlpha;
-    // shapes.begin(debugShader);
-    // debugRenderer.draw(shapes, skeleton);
-    // shapes.end();
-    // debugShader.unbind();
-
-    requestAnimationFrame(render);
+    requestAnimationFrame(Render);
 }
 
-function resize() {
+function Resize() {
     var w = canvas.clientWidth;
     var h = canvas.clientHeight;
     var bounds = skeletons[activeSkeleton].bounds;
@@ -292,17 +280,15 @@ function resize() {
     var height = canvas.height * scale;
 
     mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    WebGL.viewport(0, 0, canvas.width, canvas.height);
 }
 
-function hexToRgb(hex) {
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+function HexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
-        ? {
-              r: parseInt(result[1], 16),
-              g: parseInt(result[2], 16),
-              b: parseInt(result[3], 16)
-          }
+        ? result.slice(1,4).map((item) => {
+              return parseInt(item, 16) / 255;
+          })
         : null;
 }
 
@@ -310,10 +296,9 @@ const colorPicker = document.querySelector("#color-picker");
 colorPicker.addEventListener(
     "change",
     (event) => {
-        let result = hexToRgb(event.target.value);
-        COLOR = [result.r, result.g, result.b].map((item) => item / 255);
+        backgroundColor = HexToRgb(event.target.value);
     },
     false
 );
 
-init();
+Init();
