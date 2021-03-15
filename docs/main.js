@@ -31,28 +31,25 @@ function init() {
     }
 
     // Create a simple shader, mesh, model-view-projection matrix and SkeletonRenderer.
-    shader = spine.webgl.Shader.newTwoColoredTextured(gl);
-    batcher = new spine.webgl.PolygonBatcher(gl);
-    mvp.ortho2d(0, 0, canvas.width - 1, canvas.height - 1);
-    skeletonRenderer = new spine.webgl.SkeletonRenderer(gl);
-    // debugRenderer = new spine.webgl.SkeletonDebugRenderer(gl);
-    // debugRenderer.drawRegionAttachments = true;
-    // debugRenderer.drawBoundingBoxes = true;
-    // debugRenderer.drawMeshHull = true;
-    // debugRenderer.drawMeshTriangles = true;
-    // debugRenderer.drawPaths = true;
-    // debugShader = spine.webgl.Shader.newColored(gl);
+    // shader = spine.webgl.Shader.newTwoColoredTextured(gl);
+    shader = spine.webgl.Shader.newColoredTextured(gl);
+
+    batcher = new spine.webgl.PolygonBatcher(gl, false);
+    skeletonRenderer = new spine.webgl.SkeletonRenderer(gl, false);
     shapes = new spine.webgl.ShapeRenderer(gl);
     assetManager = new spine.webgl.AssetManager(gl);
+
+    mvp.ortho2d(0, 0, canvas.width - 1, canvas.height - 1);
 
     // Tell AssetManager to load the resources for each model, including the exported .json file, the .atlas file and the .png
     // file for the atlas. We then wait until all resources are loaded in the load() method.
 
-    for (let dir of SpineList) {
-        for (let i = 1; i <= 23; i++) {
-            assetManager.loadText(`assets/${dir}/${_.padStart(i, 3, 0)}/data.json`);
-            assetManager.loadText(`assets/${dir}/${_.padStart(i, 3, 0)}/data.atlas`);
-            assetManager.loadTexture(`assets/${dir}/${_.padStart(i, 3, 0)}/data.png`);
+    for (let subDir of SpineList) {
+        for (let i = 0; i <= 23; i++) {
+            const path = `assets/${subDir}/${_.padStart(i, 3, 0)}/data`;
+            assetManager.loadText(`${path}.json`);
+            assetManager.loadText(`${path}.atlas`);
+            assetManager.loadTexture(`${path}.png`);
         }
     }
 
@@ -62,13 +59,14 @@ function init() {
 function load() {
     // Wait until the AssetManager has loaded all resources, then load the skeletons.
     if (assetManager.isLoadingComplete()) {
-        for (let dir of SpineList) {
-            for (let i = 1; i <= 23; i++) {
-                skeletons[`${dir}/${_.padStart(i, 3, 0)}/data`] = loadSkeleton(
-                    `${dir}/${_.padStart(i, 3, 0)}/data`,
-                    "wait",
+        for (let subDir of SpineList) {
+            for (let i = 0; i <= 23; i++) {
+                const path = `${subDir}/${_.padStart(i, 3, 0)}/data`;
+                skeletons[path] = loadSkeleton(
+                    path,
+                    subDir === "sd" && i == 0 ? "talk_wait" : "wait",
                     false,
-                    dir === "sd" ? "normal" : "default"
+                    subDir === "sd" ? "normal" : "default"
                 );
             }
         }
@@ -100,10 +98,18 @@ function loadSkeleton(name, initialAnimation, premultipliedAlpha, skin) {
     // Create a SkeletonJson instance for parsing the .json file.
     var skeletonJson = new spine.SkeletonJson(atlasLoader);
 
+    // 불투명도 버그 수정
+    const json = JSON.parse(assetManager.get("assets/" + name + ".json"));
+    json.slots = json.slots.map((item) => {
+        if (item.blend && item.name !== "eye_shadow_L") {
+            delete item.blend;
+        }
+        return item;
+    });
+
     // Set the scale to apply during parsing, parse the file, and create a new skeleton.
-    var skeletonData = skeletonJson.readSkeletonData(
-        assetManager.get("assets/" + name + ".json")
-    );
+    var skeletonData = skeletonJson.readSkeletonData(json);
+
     var skeleton = new spine.Skeleton(skeletonData);
     skeleton.setSkinByName(skin);
     var bounds = calculateBounds(skeleton);
@@ -230,8 +236,6 @@ function render() {
     // Update the MVP matrix to adjust for canvas size changes
     resize();
 
-	
-
     gl.clearColor(...COLOR, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -292,21 +296,22 @@ function resize() {
 }
 
 function hexToRgb(hex) {
-	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	return result ? {
-	  r: parseInt(result[1], 16),
-	  g: parseInt(result[2], 16),
-	  b: parseInt(result[3], 16)
-	} : null;
-  }
-  
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+        ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16)
+          }
+        : null;
+}
 
 const colorPicker = document.querySelector("#color-picker");
 colorPicker.addEventListener(
     "change",
     (event) => {
-		let result = hexToRgb(event.target.value);
-		COLOR = [result.r, result.g, result.b].map(item => item / 255);
+        let result = hexToRgb(event.target.value);
+        COLOR = [result.r, result.g, result.b].map((item) => item / 255);
     },
     false
 );
