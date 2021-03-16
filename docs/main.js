@@ -70,12 +70,29 @@ async function Init() {
         });
     }
 
+    // 배경 색상 선택기
+    const colorPicker = document.querySelector("#color-picker");
+    colorPicker.addEventListener(
+        "change",
+        (event) => {
+            backgroundColor = HexToRgb(event.target.value);
+        },
+        false
+    );
+
     SetupTypeList();
     SetupIdolList();
 
-    console.log(assetInfo);
+    LoadAsset();
+}
 
-    LoadAsset("cb", "0000010010");
+function HexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+        ? result.slice(1, 4).map((item) => {
+              return parseInt(item, 16) / 255;
+          })
+        : null;
 }
 
 function LoadAsset() {
@@ -103,7 +120,6 @@ function LoadAsset() {
 
 function Load() {
     // Wait until the AssetManager has loaded all resources, then load the skeletons.
-
     if (assetManager.isLoadingComplete()) {
         asset = LoadSpine(
             assetType.startsWith("cb") && assetID === "0001010010" ? "talk_wait" : "wait",
@@ -155,9 +171,11 @@ function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
 
     // Create an AnimationState, and set the initial animation in looping mode.
     animationStateData = new spine.AnimationStateData(skeleton.data);
+    animationStateData.defaultMix = 0.3; // 애니메이션 사이를 부드럽게 전환. 값을 높일수록 느리게 전환됨
     const animationState = new spine.AnimationState(animationStateData);
+    animationState.multipleMixing = true; // 여러 애니메이션의 믹싱을 활성화.
 
-    // animationStateData.setMix("walk", "jump", 0.4);
+    // animationStateData.setMix("wait", "ok", 0.4);
     // animationStateData.setMix("jump", "run", 0.4);
     // animationState.setAnimation(0, "walk", true);
     // var jumpEntry = animationState.addAnimation(0, "jump", false, 3);
@@ -191,6 +209,7 @@ function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
     return {
         skeleton: skeleton,
         state: animationState,
+        stateData: animationStateData,
         bounds: CalculateBounds(skeleton),
         premultipliedAlpha: premultipliedAlpha
     };
@@ -307,13 +326,6 @@ function SetupSkinList() {
     });
 }
 
-function SetupUI() {
-    SetupTypeList();
-    SetupIdolList();
-    SetupAnimationList();
-    SetupSkinList();
-}
-
 function Render() {
     var now = Date.now() / 1000;
     var delta = now - lastFrameTime;
@@ -322,9 +334,11 @@ function Render() {
     // Update the MVP matrix to adjust for canvas size changes
     Resize();
 
+    // 배경 그리기
     WebGL.clearColor(...backgroundColor, 1);
     WebGL.clear(WebGL.COLOR_BUFFER_BIT);
 
+    // 애셋이 없으면 여기서 마무리
     if (asset === null) {
         return;
     }
@@ -347,7 +361,6 @@ function Render() {
     skeletonRenderer.premultipliedAlpha = premultipliedAlpha;
     skeletonRenderer.draw(batcher, skeleton);
     batcher.end();
-
     shader.unbind();
 
     requestAnimationFrame(Render);
@@ -375,23 +388,5 @@ function Resize() {
     mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
     WebGL.viewport(0, 0, canvas.width, canvas.height);
 }
-
-function HexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-        ? result.slice(1, 4).map((item) => {
-              return parseInt(item, 16) / 255;
-          })
-        : null;
-}
-
-const colorPicker = document.querySelector("#color-picker");
-colorPicker.addEventListener(
-    "change",
-    (event) => {
-        backgroundColor = HexToRgb(event.target.value);
-    },
-    false
-);
 
 Init();
