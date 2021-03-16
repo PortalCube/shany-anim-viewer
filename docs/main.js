@@ -298,8 +298,29 @@ function SetupAnimationList() {
         const skeleton = asset.skeleton;
         const animationName = animationList.value;
         skeleton.setToSetupPose();
-        state.setAnimation(0, animationName, true);
+
+        let trackIndex = 0;
+        let isLoop = true;
+
+        if (animationName.startsWith("eye")) {
+            trackIndex = 1;
+        } else if (animationName.startsWith("face")) {
+            trackIndex = 2;
+            isLoop = false;
+        } else if (animationName.startsWith("lip")) {
+            trackIndex = 3;
+        }
+
+        state.setAnimation(trackIndex, animationName, isLoop);
     });
+}
+
+function ClearTrack() {
+    if (asset) {
+        asset.state.clearTrack(1);
+        asset.state.clearTrack(2);
+        asset.state.clearTrack(3);
+    }
 }
 
 function SetupSkinList() {
