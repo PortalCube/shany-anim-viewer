@@ -8,7 +8,6 @@ var assetManager;
 var skeletonRenderer;
 var shapes;
 
-let dragAndDrop = false;
 let pathJSON = null;
 let pathAtlas = null;
 let pathTexture = null;
@@ -133,7 +132,6 @@ function DropHandler(event) {
     }
 
     if (pathAtlas && pathTexture && pathJSON) {
-        dragAndDrop = true;
         requestAnimationFrame(LoadAsset);
     } else {
         const loadedFiles = [
@@ -153,7 +151,6 @@ function DropHandler(event) {
 }
 
 function ClearDragStatus() {
-    dragAndDrop = false;
     pathJSON = null;
     pathAtlas = null;
     pathTexture = null;
