@@ -3,126 +3,167 @@ var canvas;
 var shader;
 var batcher;
 var WebGL;
-var mvp = new spine.webgl.Matrix4();
+const mvp = new spine.webgl.Matrix4();
 var assetManager;
 var skeletonRenderer;
 var shapes;
-var skeletons = {};
-var activeSkeleton = "sd/001/data";
+
+let asset = null;
+
+let currentAssetType = null;
+let currentAssetId = null;
+
+let assetType = "cb";
+let assetID = "0000010010";
+
+let gameInfo = {};
+let assetInfo = {};
 
 let backgroundColor = [0, 0, 0];
 
-const SpineList = ["sd", "stand"];
+const $ = document.querySelectorAll.bind(document);
 
-function Init() {
+async function Init() {
     // Setup canvas and WebGL context. We pass alpha: false to canvas.getContext() so we don't use premultiplied alpha when
     // loading textures. That is handled separately by PolygonBatcher.
-    canvas = document.getElementById("canvas");
+    canvas = $("canvas")[0];
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    var config = { alpha: false };
+
+    const config = { alpha: false };
     WebGL =
         canvas.getContext("webgl", config) ||
         canvas.getContext("experimental-webgl", config);
     if (!WebGL) {
-        alert("WebGL is unavailable.");
+        alert("WebGL을 사용할 수 없는 환경입니다.");
         return;
     }
 
-    // Create a simple shader, mesh, model-view-projection matrix and SkeletonRenderer.
-    shader = spine.webgl.Shader.newColoredTextured(WebGL);
+    mvp.ortho2d(0, 0, canvas.width - 1, canvas.height - 1);
 
+    // Create a simple shader, mesh, model-view-projection matrix and SkeletonRenderer.
     skeletonRenderer = new spine.webgl.SkeletonRenderer(WebGL, false);
     assetManager = new spine.webgl.AssetManager(WebGL);
     batcher = new spine.webgl.PolygonBatcher(WebGL, false);
     shapes = new spine.webgl.ShapeRenderer(WebGL);
+    shader = spine.webgl.Shader.newColoredTextured(WebGL);
 
+    // 애셋 불러오기
+    gameInfo = (await axios.get("game.json")).data;
+    assetInfo = (await axios.get("asset.json")).data;
 
-    mvp.ortho2d(0, 0, canvas.width - 1, canvas.height - 1);
+    // 애셋 데이터 가공
+    for (let key in assetInfo) {
+        assetInfo[key] = assetInfo[key].map((id) => {
+            const idArray = id.split("").map((item) => {
+                return parseInt(item);
+            });
+            return {
+                value: id,
+                type: idArray.shift(),
+                special_type: idArray.shift(),
+                rarity: idArray.shift(),
+                idol_id: parseInt(idArray.splice(0, 3).join("")),
+                release_id: parseInt(idArray.splice(0, 3).join("")),
+                other: idArray.shift()
+            };
+        });
+    }
 
+    SetupTypeList();
+    SetupIdolList();
+
+    console.log(assetInfo);
+
+    LoadAsset("cb", "0000010010");
+}
+
+function LoadAsset() {
     // Tell AssetManager to load the resources for each model, including the exported .json file, the .atlas file and the .png
     // file for the atlas. We then wait until all resources are loaded in the load() method.
 
-    for (let subDir of SpineList) {
-        for (let i = 0; i <= 23; i++) {
-            const path = `assets/${subDir}/${_.padStart(i, 3, 0)}/data`;
-            assetManager.loadText(`${path}.json`);
-            assetManager.loadText(`${path}.atlas`);
-            assetManager.loadTexture(`${path}.png`);
-        }
+    // 현재 파일을 null로 설정하여 렌더링 중단
+    asset = null;
+
+    // 메모리 관리를 위한 unload 작업
+    if (currentAssetType && currentAssetId) {
+        const oldPath = ["assets", currentAssetType, currentAssetId, "data"].join("/");
+        assetManager.remove(oldPath + ".json");
+        assetManager.remove(oldPath + ".atlas");
+        assetManager.remove(oldPath + ".png");
     }
+
+    const path = ["assets", assetType, assetID, "data"].join("/");
+    assetManager.loadText(path + ".json");
+    assetManager.loadText(path + ".atlas");
+    assetManager.loadTexture(path + ".png");
 
     requestAnimationFrame(Load);
 }
 
 function Load() {
     // Wait until the AssetManager has loaded all resources, then load the skeletons.
-    if (assetManager.isLoadingComplete()) {
-        for (let subDir of SpineList) {
-            for (let i = 0; i <= 23; i++) {
-                const path = `${subDir}/${_.padStart(i, 3, 0)}/data`;
-                skeletons[path] = LoadSkeleton(
-                    path,
-                    subDir === "sd" && i == 0 ? "talk_wait" : "wait",
-                    false,
-                    subDir === "sd" ? "normal" : "default"
-                );
-            }
-        }
 
-        SetupUI();
+    if (assetManager.isLoadingComplete()) {
+        asset = LoadSpine(
+            assetType.startsWith("cb") && assetID === "0001010010" ? "talk_wait" : "wait",
+            false,
+            assetType.startsWith("cb") ? "normal" : "default"
+        );
+
+        currentAssetType = assetType;
+        currentAssetId = assetID;
+
+        SetupAnimationList();
+        SetupSkinList();
+
         requestAnimationFrame(Render);
     } else {
         requestAnimationFrame(Load);
     }
 }
 
-function LoadSkeleton(name, initialAnimation, premultipliedAlpha, skin = "default") {
+function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
     // Load the texture atlas using name.atlas and name.png from the AssetManager.
     // The function passed to TextureAtlas is used to resolve relative paths.
-    atlas = new spine.TextureAtlas(
-        assetManager.get("assets/" + name + ".atlas"),
-        function (path) {
-            return assetManager.get(
-                "assets/" + name.split("/").slice(0, 2).join("/") + "/" + path
-            );
-        }
+    const fileArray = ["assets", assetType, assetID, "data"];
+    const filePath = fileArray.join("/");
+    const subPath = fileArray.slice(0, 3).join("/");
+
+    atlas = new spine.TextureAtlas(assetManager.get(filePath + ".atlas"), (path) =>
+        assetManager.get([subPath, path].join("/"))
     );
 
     // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
     atlasLoader = new spine.AtlasAttachmentLoader(atlas);
 
     // Create a SkeletonJson instance for parsing the .json file.
-    var skeletonJson = new spine.SkeletonJson(atlasLoader);
+    const skeletonJson = new spine.SkeletonJson(atlasLoader);
 
     // 불투명도 버그 수정
-    const json = JSON.parse(assetManager.get("assets/" + name + ".json"));
-    json.slots = json.slots.map((item) => {
+    const jsonData = JSON.parse(assetManager.get(filePath + ".json"));
+    jsonData.slots.forEach((item) => {
         if (item.blend && item.name !== "eye_shadow_L") {
             delete item.blend;
         }
-        return item;
     });
 
     // Set the scale to apply during parsing, parse the file, and create a new skeleton.
-    var skeletonData = skeletonJson.readSkeletonData(json);
-
-    var skeleton = new spine.Skeleton(skeletonData);
+    const skeletonData = skeletonJson.readSkeletonData(jsonData);
+    const skeleton = new spine.Skeleton(skeletonData);
     skeleton.setSkinByName(skin);
-    var bounds = CalculateBounds(skeleton);
 
     // Create an AnimationState, and set the initial animation in looping mode.
     animationStateData = new spine.AnimationStateData(skeleton.data);
-    var animationState = new spine.AnimationState(animationStateData);
-    if (name == "spineboy") {
-        animationStateData.setMix("walk", "jump", 0.4);
-        animationStateData.setMix("jump", "run", 0.4);
-        animationState.setAnimation(0, "walk", true);
-        var jumpEntry = animationState.addAnimation(0, "jump", false, 3);
-        animationState.addAnimation(0, "run", true, 0);
-    } else {
-        animationState.setAnimation(0, initialAnimation, true);
-    }
+    const animationState = new spine.AnimationState(animationStateData);
+
+    // animationStateData.setMix("walk", "jump", 0.4);
+    // animationStateData.setMix("jump", "run", 0.4);
+    // animationState.setAnimation(0, "walk", true);
+    // var jumpEntry = animationState.addAnimation(0, "jump", false, 3);
+    // animationState.addAnimation(0, "run", true, 0);
+
+    animationState.setAnimation(0, initialAnimation, true);
     animationState.addListener({
         start: function (track) {
             console.log("Animation on track " + track.trackIndex + " started");
@@ -150,7 +191,7 @@ function LoadSkeleton(name, initialAnimation, premultipliedAlpha, skin = "defaul
     return {
         skeleton: skeleton,
         state: animationState,
-        bounds: bounds,
+        bounds: CalculateBounds(skeleton),
         premultipliedAlpha: premultipliedAlpha
     };
 }
@@ -164,65 +205,113 @@ function CalculateBounds(skeleton) {
     return { offset: offset, size: size };
 }
 
-function SetupUI() {
-    var skeletonList = $("#skeletonList");
-    for (var skeletonName in skeletons) {
-        var option = $("<option></option>");
-        option.attr("value", skeletonName).text(skeletonName);
-        if (skeletonName === activeSkeleton) option.attr("selected", "selected");
-        skeletonList.append(option);
+function SetupTypeList() {
+    const typeList = $("#typeList")[0];
+    const typeTextList = gameInfo.type;
+
+    typeList.innerHTML = "";
+
+    for (const type of Object.keys(assetInfo)) {
+        const option = document.createElement("option");
+        const typeText = _.find(typeTextList, { id: type }) || { name: "타입" };
+        option.textContent = typeText.name;
+        option.value = type;
+        option.selected = type === assetType;
+        typeList.appendChild(option);
     }
-    var setupAnimationUI = function () {
-        var animationList = $("#animationList");
-        animationList.empty();
-        var skeleton = skeletons[activeSkeleton].skeleton;
-        var state = skeletons[activeSkeleton].state;
-        var activeAnimation = state.tracks[0].animation.name;
-        for (var i = 0; i < skeleton.data.animations.length; i++) {
-            var name = skeleton.data.animations[i].name;
-            var option = $("<option></option>");
-            option.attr("value", name).text(name);
-            if (name === activeAnimation) option.attr("selected", "selected");
-            animationList.append(option);
-        }
 
-        animationList.change(function () {
-            var state = skeletons[activeSkeleton].state;
-            var skeleton = skeletons[activeSkeleton].skeleton;
-            var animationName = $("#animationList option:selected").text();
-            skeleton.setToSetupPose();
-            state.setAnimation(0, animationName, true);
-        });
-    };
-
-    var setupSkinUI = function () {
-        var skinList = $("#skinList");
-        skinList.empty();
-        var skeleton = skeletons[activeSkeleton].skeleton;
-        var activeSkin = skeleton.skin == null ? "default" : skeleton.skin.name;
-        for (var i = 0; i < skeleton.data.skins.length; i++) {
-            var name = skeleton.data.skins[i].name;
-            var option = $("<option></option>");
-            option.attr("value", name).text(name);
-            if (name === activeSkin) option.attr("selected", "selected");
-            skinList.append(option);
-        }
-
-        skinList.change(function () {
-            var skeleton = skeletons[activeSkeleton].skeleton;
-            var skinName = $("#skinList option:selected").text();
-            skeleton.setSkinByName(skinName);
-            skeleton.setSlotsToSetupPose();
-        });
-    };
-
-    skeletonList.change(function () {
-        activeSkeleton = $("#skeletonList option:selected").text();
-        setupAnimationUI();
-        setupSkinUI();
+    typeList.addEventListener("change", function () {
+        assetType = typeList.value;
+        SetupIdolList();
+        requestAnimationFrame(LoadAsset);
     });
-    setupAnimationUI();
-    setupSkinUI();
+
+    const firstNode = $("#typeList option")[0];
+    firstNode.selected = true;
+    assetType = firstNode.value;
+}
+
+function SetupIdolList() {
+    const idolList = $("#idolList")[0];
+    const idolTextList = gameInfo.idol;
+
+    idolList.innerHTML = "";
+
+    for (const asset of assetInfo[assetType]) {
+        const option = document.createElement("option");
+        const idolText = _.find(idolTextList, { id: asset.idol_id }) || {
+            name: "아이돌"
+        };
+        option.textContent = idolText.name.split(" ").pop();
+        option.value = asset.value;
+        idolList.appendChild(option);
+    }
+
+    idolList.addEventListener("change", function () {
+        assetID = idolList.value;
+        requestAnimationFrame(LoadAsset);
+    });
+
+    const firstNode = $("#idolList option")[0];
+    firstNode.selected = true;
+    assetID = firstNode.value;
+}
+
+function SetupAnimationList() {
+    const animationList = $("#animationList")[0];
+    const skeleton = asset.skeleton;
+    const state = asset.state;
+    const activeAnimation = state.tracks[0].animation.name;
+
+    animationList.innerHTML = "";
+
+    for (let animation of skeleton.data.animations) {
+        const name = animation.name;
+        const option = document.createElement("option");
+        option.textContent = name;
+        option.value = name;
+        option.selected = name === activeAnimation;
+        animationList.appendChild(option);
+    }
+
+    animationList.addEventListener("change", function () {
+        const state = asset.state;
+        const skeleton = asset.skeleton;
+        const animationName = animationList.value;
+        skeleton.setToSetupPose();
+        state.setAnimation(0, animationName, true);
+    });
+}
+
+function SetupSkinList() {
+    const skinList = $("#skinList")[0];
+    const skeleton = asset.skeleton;
+    const activeSkin = skeleton.skin == null ? "default" : skeleton.skin.name;
+
+    skinList.innerHTML = "";
+
+    for (let skin of skeleton.data.skins) {
+        const name = skin.name;
+        const option = document.createElement("option");
+        option.textContent = name;
+        option.value = name;
+        option.selected = name === activeSkin;
+        skinList.appendChild(option);
+    }
+
+    skinList.addEventListener("change", function () {
+        const skeleton = asset.skeleton;
+        const skinName = skinList.value;
+        skeleton.setSkinByName(skinName);
+        skeleton.setSlotsToSetupPose();
+    });
+}
+
+function SetupUI() {
+    SetupTypeList();
+    SetupIdolList();
+    SetupAnimationList();
+    SetupSkinList();
 }
 
 function Render() {
@@ -236,10 +325,14 @@ function Render() {
     WebGL.clearColor(...backgroundColor, 1);
     WebGL.clear(WebGL.COLOR_BUFFER_BIT);
 
+    if (asset === null) {
+        return;
+    }
+
     // Apply the animation state based on the delta time.
-    var state = skeletons[activeSkeleton].state;
-    var skeleton = skeletons[activeSkeleton].skeleton;
-    var premultipliedAlpha = skeletons[activeSkeleton].premultipliedAlpha;
+    var state = asset.state;
+    var skeleton = asset.skeleton;
+    var premultipliedAlpha = asset.premultipliedAlpha;
     state.update(delta);
     state.apply(skeleton);
     skeleton.updateWorldTransform();
@@ -263,7 +356,7 @@ function Render() {
 function Resize() {
     var w = canvas.clientWidth;
     var h = canvas.clientHeight;
-    var bounds = skeletons[activeSkeleton].bounds;
+    var bounds = asset.bounds;
     if (canvas.width != w || canvas.height != h) {
         canvas.width = w;
         canvas.height = h;
@@ -286,7 +379,7 @@ function Resize() {
 function HexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
-        ? result.slice(1,4).map((item) => {
+        ? result.slice(1, 4).map((item) => {
               return parseInt(item, 16) / 255;
           })
         : null;
