@@ -148,6 +148,7 @@ function DropHandler(event) {
             "3개의 파일 (data.json, data.atlas, data.png) 을 한꺼번에 드롭해주세요.\n현재 불러온 파일: " +
                 loadedFiles
         );
+        ClearDragStatus();
     }
 }
 
