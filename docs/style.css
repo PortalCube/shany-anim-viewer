@@ -29,3 +29,6 @@ select, input, button {
 select {
     min-width: 100px;
 }
+button {
+    padding: 2px 8px;
+}
