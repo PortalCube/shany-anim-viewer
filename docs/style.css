@@ -15,20 +15,19 @@ canvas {
 }
 div {
     position: fixed;
-    top: 10px;
-    left: 10px;
     width: 100%;
+    background-color: #00000066;
+    padding-bottom: 6px;
 }
 div span {
     color: #fff;
-    margin-right: 5px;
+    padding: 4px;
 }
+
 select, input, button {
+    padding: 2px 8px;
     margin-right: 20px;
 }
 select {
     min-width: 100px;
-}
-button {
-    padding: 2px 8px;
 }
