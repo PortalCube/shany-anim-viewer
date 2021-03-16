@@ -5,22 +5,24 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>shiny-animation-viewer</title>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="style.css" />
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
         <script src="https://esotericsoftware.com/files/runtimes/spine-ts/build/spine-webgl.js"></script>
     </head>
     <body>
         <canvas id="canvas"></canvas>
         <div>
-            <span>File:</span
-            ><select id="skeletonList"></select>
-            <span>Animation:</span
-            ><select id="animationList"></select>
-            <span>Skin:</span
-            ><select id="skinList"></select>
+            <span>Type:</span>
+            <select id="typeList"></select>
+            <span>Idol:</span>
+            <select id="idolList"></select>
+            <span>Animation:</span>
+            <select id="animationList"></select>
+            <span>Skin:</span>
+            <select id="skinList"></select>
             <span>Background Color:</span>
-            <input id="color-picker" type="color">
+            <input id="color-picker" type="color" />
         </div>
         <script src="main.js"></script>
     </body>
