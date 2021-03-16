@@ -106,7 +106,6 @@ function DropHandler(event) {
             if (item.kind === "file") {
                 const file = item.getAsFile();
                 const blobURL = window.URL.createObjectURL(file);
-                console.log(file);
                 if (file.name.endsWith(".atlas")) {
                     pathAtlas = blobURL;
                 } else if (file.name.endsWith(".png")) {
@@ -143,9 +142,12 @@ function DropHandler(event) {
             pathJSON ? "JSON" : null
         ]
             .filter((item) => item)
-            .join(",");
+            .join(", ");
 
-        alert("3개의 파일을 한꺼번에 드롭해주세요. 현재 불러온 파일: " + loadedFiles);
+        alert(
+            "3개의 파일 (data.json, data.atlas, data.png) 을 한꺼번에 드롭해주세요.\n현재 불러온 파일: " +
+                loadedFiles
+        );
     }
 }
 
