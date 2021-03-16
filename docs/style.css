@@ -23,7 +23,7 @@ div span {
     color: #fff;
     margin-right: 5px;
 }
-div select {
+select, input, button {
     margin-right: 20px;
 }
 select {
