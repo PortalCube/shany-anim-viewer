@@ -10,9 +10,6 @@ var shapes;
 
 let asset = null;
 
-let currentAssetType = null;
-let currentAssetId = null;
-
 let assetType = "cb";
 let assetID = "0000010010";
 
@@ -103,12 +100,7 @@ function LoadAsset() {
     asset = null;
 
     // 메모리 관리를 위한 unload 작업
-    if (currentAssetType && currentAssetId) {
-        const oldPath = ["assets", currentAssetType, currentAssetId, "data"].join("/");
-        assetManager.remove(oldPath + ".json");
-        assetManager.remove(oldPath + ".atlas");
-        assetManager.remove(oldPath + ".png");
-    }
+    assetManager.removeAll();
 
     const path = ["assets", assetType, assetID, "data"].join("/");
     assetManager.loadText(path + ".json");
@@ -126,9 +118,6 @@ function Load() {
             false,
             assetType.startsWith("cb") ? "normal" : "default"
         );
-
-        currentAssetType = assetType;
-        currentAssetId = assetID;
 
         SetupAnimationList();
         SetupSkinList();
@@ -182,28 +171,30 @@ function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
     // animationState.addAnimation(0, "run", true, 0);
 
     animationState.setAnimation(0, initialAnimation, true);
-    animationState.addListener({
-        start: function (track) {
-            console.log("Animation on track " + track.trackIndex + " started");
-        },
-        interrupt: function (track) {
-            console.log("Animation on track " + track.trackIndex + " interrupted");
-        },
-        end: function (track) {
-            console.log("Animation on track " + track.trackIndex + " ended");
-        },
-        disposed: function (track) {
-            console.log("Animation on track " + track.trackIndex + " disposed");
-        },
-        complete: function (track) {
-            console.log("Animation on track " + track.trackIndex + " completed");
-        },
-        event: function (track, event) {
-            console.log(
-                "Event on track " + track.trackIndex + ": " + JSON.stringify(event)
-            );
-        }
-    });
+    if (debug) {
+        animationState.addListener({
+            start: function (track) {
+                console.log("Animation on track " + track.trackIndex + " started");
+            },
+            interrupt: function (track) {
+                console.log("Animation on track " + track.trackIndex + " interrupted");
+            },
+            end: function (track) {
+                console.log("Animation on track " + track.trackIndex + " ended");
+            },
+            disposed: function (track) {
+                console.log("Animation on track " + track.trackIndex + " disposed");
+            },
+            complete: function (track) {
+                console.log("Animation on track " + track.trackIndex + " completed");
+            },
+            event: function (track, event) {
+                console.log(
+                    "Event on track " + track.trackIndex + ": " + JSON.stringify(event)
+                );
+            }
+        });
+    }
 
     // Pack everything up and return to caller.
     return {
@@ -214,6 +205,8 @@ function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
         premultipliedAlpha: premultipliedAlpha
     };
 }
+
+let debug = false;
 
 function CalculateBounds(skeleton) {
     skeleton.setToSetupPose();
@@ -300,18 +293,16 @@ function SetupAnimationList() {
         skeleton.setToSetupPose();
 
         let trackIndex = 0;
-        let isLoop = true;
 
         if (animationName.startsWith("eye")) {
             trackIndex = 1;
         } else if (animationName.startsWith("face")) {
             trackIndex = 2;
-            isLoop = false;
         } else if (animationName.startsWith("lip")) {
             trackIndex = 3;
         }
 
-        state.setAnimation(trackIndex, animationName, isLoop);
+        state.setAnimation(trackIndex, animationName, true);
     });
 }
 
@@ -352,9 +343,6 @@ function Render() {
     var delta = now - lastFrameTime;
     lastFrameTime = now;
 
-    // Update the MVP matrix to adjust for canvas size changes
-    Resize();
-
     // 배경 그리기
     WebGL.clearColor(...backgroundColor, 1);
     WebGL.clear(WebGL.COLOR_BUFFER_BIT);
@@ -363,6 +351,9 @@ function Render() {
     if (asset === null) {
         return;
     }
+
+    // Update the MVP matrix to adjust for canvas size changes
+    Resize();
 
     // Apply the animation state based on the delta time.
     var state = asset.state;
