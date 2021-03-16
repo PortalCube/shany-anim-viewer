@@ -8,6 +8,11 @@ var assetManager;
 var skeletonRenderer;
 var shapes;
 
+let dragAndDrop = false;
+let pathJSON = null;
+let pathAtlas = null;
+let pathTexture = null;
+
 let asset = null;
 
 let assetType = "cb";
@@ -92,6 +97,70 @@ function HexToRgb(hex) {
         : null;
 }
 
+function DropHandler(event) {
+    // Prevent default behavior (Prevent file from being opened)
+    event.preventDefault();
+
+    if (event.dataTransfer.items) {
+        for (let item of event.dataTransfer.items) {
+            if (item.kind === "file") {
+                const file = item.getAsFile();
+                const blobURL = window.URL.createObjectURL(file);
+                console.log(file);
+                if (file.name.endsWith(".atlas")) {
+                    pathAtlas = blobURL;
+                } else if (file.name.endsWith(".png")) {
+                    pathTexture = blobURL;
+                } else if (file.name.endsWith(".json")) {
+                    pathJSON = blobURL;
+                } else if (file.name.endsWith(".webp")) {
+                    pathTexture = blobURL;
+                }
+            }
+        }
+    } else {
+        for (let file of event.dataTransfer.files) {
+            const blobURL = window.URL.createObjectURL(file);
+            if (file.name.endsWith(".atlas")) {
+                pathAtlas = blobURL;
+            } else if (file.name.endsWith(".png")) {
+                pathTexture = blobURL;
+            } else if (file.name.endsWith(".json")) {
+                pathJSON = blobURL;
+            } else if (file.name.endsWith(".webp")) {
+                pathTexture = blobURL;
+            }
+        }
+    }
+
+    if (pathAtlas && pathTexture && pathJSON) {
+        dragAndDrop = true;
+        requestAnimationFrame(LoadAsset);
+    } else {
+        const loadedFiles = [
+            pathAtlas ? "Atlas" : null,
+            pathTexture ? "이미지" : null,
+            pathJSON ? "JSON" : null
+        ]
+            .filter((item) => item)
+            .join(",");
+
+        alert("3개의 파일을 한꺼번에 드롭해주세요. 현재 불러온 파일: " + loadedFiles);
+    }
+}
+
+function ClearDragStatus() {
+    dragAndDrop = false;
+    pathJSON = null;
+    pathAtlas = null;
+    pathTexture = null;
+}
+
+function DragOverHandler(event) {
+    // Prevent default behavior (Prevent file from being opened)
+    event.preventDefault();
+}
+
 function LoadAsset() {
     // Tell AssetManager to load the resources for each model, including the exported .json file, the .atlas file and the .png
     // file for the atlas. We then wait until all resources are loaded in the load() method.
@@ -103,9 +172,9 @@ function LoadAsset() {
     assetManager.removeAll();
 
     const path = ["assets", assetType, assetID, "data"].join("/");
-    assetManager.loadText(path + ".json");
-    assetManager.loadText(path + ".atlas");
-    assetManager.loadTexture(path + ".png");
+    assetManager.loadText(pathJSON || path + ".json");
+    assetManager.loadText(pathAtlas || path + ".atlas");
+    assetManager.loadTexture(pathTexture || path + ".png");
 
     requestAnimationFrame(Load);
 }
@@ -113,11 +182,7 @@ function LoadAsset() {
 function Load() {
     // Wait until the AssetManager has loaded all resources, then load the skeletons.
     if (assetManager.isLoadingComplete()) {
-        asset = LoadSpine(
-            assetType.startsWith("cb") && assetID === "0001010010" ? "talk_wait" : "wait",
-            false,
-            assetType.startsWith("cb") ? "normal" : "default"
-        );
+        asset = LoadSpine("wait", false);
 
         SetupAnimationList();
         SetupSkinList();
@@ -128,15 +193,18 @@ function Load() {
     }
 }
 
-function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
+function LoadSpine(initialAnimation, premultipliedAlpha) {
     // Load the texture atlas using name.atlas and name.png from the AssetManager.
     // The function passed to TextureAtlas is used to resolve relative paths.
     const fileArray = ["assets", assetType, assetID, "data"];
     const filePath = fileArray.join("/");
     const subPath = fileArray.slice(0, 3).join("/");
 
-    atlas = new spine.TextureAtlas(assetManager.get(filePath + ".atlas"), (path) =>
-        assetManager.get([subPath, path].join("/"))
+    atlas = new spine.TextureAtlas(
+        assetManager.get(pathAtlas || filePath + ".atlas"),
+        (path) => {
+            return assetManager.get(pathTexture || [subPath, path].join("/"));
+        }
     );
 
     // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
@@ -146,7 +214,7 @@ function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
     const skeletonJson = new spine.SkeletonJson(atlasLoader);
 
     // 불투명도 버그 수정
-    const jsonData = JSON.parse(assetManager.get(filePath + ".json"));
+    const jsonData = JSON.parse(assetManager.get(pathJSON || filePath + ".json"));
     jsonData.slots.forEach((item) => {
         if (item.blend && item.name !== "eye_shadow_L") {
             delete item.blend;
@@ -156,7 +224,9 @@ function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
     // Set the scale to apply during parsing, parse the file, and create a new skeleton.
     const skeletonData = skeletonJson.readSkeletonData(jsonData);
     const skeleton = new spine.Skeleton(skeletonData);
-    skeleton.setSkinByName(skin);
+    try {
+        skeleton.setSkinByName("normal");
+    } catch (e) {}
 
     // Create an AnimationState, and set the initial animation in looping mode.
     animationStateData = new spine.AnimationStateData(skeleton.data);
@@ -169,8 +239,12 @@ function LoadSpine(initialAnimation, premultipliedAlpha, skin = "default") {
     // animationState.setAnimation(0, "walk", true);
     // var jumpEntry = animationState.addAnimation(0, "jump", false, 3);
     // animationState.addAnimation(0, "run", true, 0);
+    try {
+        animationState.setAnimation(0, initialAnimation, true);
+    } catch (e) {
+        animationState.setAnimation(0, "talk_wait", true);
+    }
 
-    animationState.setAnimation(0, initialAnimation, true);
     if (debug) {
         animationState.addListener({
             start: function (track) {
@@ -235,6 +309,7 @@ function SetupTypeList() {
     typeList.addEventListener("change", function () {
         assetType = typeList.value;
         SetupIdolList();
+        ClearDragStatus();
         requestAnimationFrame(LoadAsset);
     });
 
@@ -261,6 +336,7 @@ function SetupIdolList() {
 
     idolList.addEventListener("change", function () {
         assetID = idolList.value;
+        ClearDragStatus();
         requestAnimationFrame(LoadAsset);
     });
 
