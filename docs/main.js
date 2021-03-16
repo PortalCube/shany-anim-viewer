@@ -225,7 +225,7 @@ function LoadSpine(initialAnimation, premultipliedAlpha) {
     const skeletonData = skeletonJson.readSkeletonData(jsonData);
     const skeleton = new spine.Skeleton(skeletonData);
     try {
-        skeleton.setSkinByName("normal");
+        skeleton.setSkinByName("normal"); // SD 일러스트 기본 스킨
     } catch (e) {}
 
     // Create an AnimationState, and set the initial animation in looping mode.
@@ -239,10 +239,11 @@ function LoadSpine(initialAnimation, premultipliedAlpha) {
     // animationState.setAnimation(0, "walk", true);
     // var jumpEntry = animationState.addAnimation(0, "jump", false, 3);
     // animationState.addAnimation(0, "run", true, 0);
+
     try {
         animationState.setAnimation(0, initialAnimation, true);
     } catch (e) {
-        animationState.setAnimation(0, "talk_wait", true);
+        animationState.setAnimation(0, "talk_wait", true); // 하즈키 SD 관련 수정
     }
 
     if (debug) {
@@ -369,6 +370,7 @@ function SetupAnimationList() {
         skeleton.setToSetupPose();
 
         let trackIndex = 0;
+        let isLoop = true;
 
         if (animationName.startsWith("eye")) {
             trackIndex = 1;
@@ -376,9 +378,11 @@ function SetupAnimationList() {
             trackIndex = 2;
         } else if (animationName.startsWith("lip")) {
             trackIndex = 3;
+        } else if (animationName.startsWith("arm")) {
+            isLoop = false;
         }
 
-        state.setAnimation(trackIndex, animationName, true);
+        state.setAnimation(trackIndex, animationName, isLoop);
     });
 }
 
