@@ -26,3 +26,6 @@ div span {
 div select {
     margin-right: 20px;
 }
+select {
+    min-width: 100px;
+}
