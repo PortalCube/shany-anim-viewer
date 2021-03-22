@@ -16,3 +16,9 @@ https://portalcube.github.io/shany-anim-viewer
 
 -   화면이 작은 기기에서 화질이 저하되는 문제 있음
 -   이 저장소는 [Spine 공식 예제](https://github.com/EsotericSoftware/spine-runtimes/tree/3.6/spine-ts/webgl/example)를 수정하여 제작되었습니다.
+
+## 애셋에 관하여
+
+애셋 데이터는 저장소에 직접적으로 커밋하지 않고, Release에 첨부하여 업데이트됩니다. (v0.5.0부터는 저장소에서 애셋이 삭제될 예정)
+
+애셋 데이터에 대한 메타데이터는 asset.json에 담겨있으며, 메타데이터는 asset_updater.js로 생성할 수 있습니다. (Node.js가 필요합니다.)
