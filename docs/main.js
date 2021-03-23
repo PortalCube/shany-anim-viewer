@@ -22,8 +22,7 @@ let assetInfo = {};
 
 let backgroundColor = [0, 0, 0];
 
-const dataURL = "https://portalcube.github.io/shany-anim-viewer";
-// const dataURL = "https://shinycolors.info/utils/shany-anim-viewer/docs";
+const dataURL = "https://shinycolors.info/utils/shany-anim-viewer/docs";
 
 const $ = document.querySelectorAll.bind(document);
 
