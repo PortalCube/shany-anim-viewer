@@ -53,8 +53,8 @@ async function Init() {
     shader = spine.webgl.Shader.newColoredTextured(WebGL);
 
     // 애셋 불러오기
-    gameInfo = (await axios.get("/game.json")).data;
-    assetInfo = (await axios.get("/asset.json")).data;
+    gameInfo = (await axios.get(dataURL + "/game.json")).data;
+    assetInfo = (await axios.get(dataURL + "/asset.json")).data;
 
     // 애셋 데이터 가공
     for (let key in assetInfo) {
