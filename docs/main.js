@@ -22,6 +22,9 @@ let assetInfo = {};
 
 let backgroundColor = [0, 0, 0];
 
+const dataURL = "https://portalcube.github.io/shany-anim-viewer";
+// const dataURL = "https://shinycolors.info/utils/shany-anim-viewer/docs";
+
 const $ = document.querySelectorAll.bind(document);
 
 async function Init() {
@@ -50,8 +53,8 @@ async function Init() {
     shader = spine.webgl.Shader.newColoredTextured(WebGL);
 
     // 애셋 불러오기
-    gameInfo = (await axios.get("game.json")).data;
-    assetInfo = (await axios.get("asset.json")).data;
+    gameInfo = (await axios.get("/game.json")).data;
+    assetInfo = (await axios.get("/asset.json")).data;
 
     // 애셋 데이터 가공
     for (let key in assetInfo) {
@@ -171,7 +174,7 @@ function LoadAsset() {
     // 메모리 관리를 위한 unload 작업
     assetManager.removeAll();
 
-    const path = ["assets", assetType, assetID, "data"].join("/");
+    const path = [dataURL, "assets", assetType, assetID, "data"].join("/");
     assetManager.loadText(pathJSON || path + ".json");
     assetManager.loadText(pathAtlas || path + ".atlas");
     assetManager.loadTexture(pathTexture || path + ".png");
@@ -196,9 +199,9 @@ function Load() {
 function LoadSpine(initialAnimation, premultipliedAlpha) {
     // Load the texture atlas using name.atlas and name.png from the AssetManager.
     // The function passed to TextureAtlas is used to resolve relative paths.
-    const fileArray = ["assets", assetType, assetID, "data"];
+    const fileArray = [dataURL, "assets", assetType, assetID, "data"];
     const filePath = fileArray.join("/");
-    const subPath = fileArray.slice(0, 3).join("/");
+    const subPath = fileArray.slice(0, 4).join("/");
 
     atlas = new spine.TextureAtlas(
         assetManager.get(pathAtlas || filePath + ".atlas"),
