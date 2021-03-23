@@ -22,8 +22,7 @@ let assetInfo = {};
 
 let backgroundColor = [0, 0, 0];
 
-let dataURL = "https://portalcube.github.io/shany-anim-viewer";
-// let dataURL = "https://shinycolors.info/utils/shany-anim-viewer/docs";
+const dataURL = "https://shinycolors.info/utils/shany-anim-viewer/docs";
 
 const $ = document.querySelectorAll.bind(document);
 
@@ -76,13 +75,9 @@ async function Init() {
 
     // 배경 색상 선택기
     const colorPicker = document.querySelector("#color-picker");
-    colorPicker.addEventListener(
-        "change",
-        (event) => {
-            backgroundColor = HexToRgb(event.target.value);
-        },
-        false
-    );
+    colorPicker.onchange = (event) => {
+        backgroundColor = HexToRgb(event.target.value);
+    };
 
     SetupTypeList();
     SetupIdolList();
@@ -310,12 +305,12 @@ function SetupTypeList() {
         typeList.appendChild(option);
     }
 
-    typeList.addEventListener("change", function () {
+    typeList.onchange = () => {
         assetType = typeList.value;
         SetupIdolList();
         ClearDragStatus();
         requestAnimationFrame(LoadAsset);
-    });
+    };
 
     const firstNode = $("#typeList option")[0];
     firstNode.selected = true;
@@ -338,11 +333,12 @@ function SetupIdolList() {
         idolList.appendChild(option);
     }
 
-    idolList.addEventListener("change", function () {
+    idolList.onchange = () => {
+        console.log(new Date());
         assetID = idolList.value;
         ClearDragStatus();
         requestAnimationFrame(LoadAsset);
-    });
+    };
 
     const firstNode = $("#idolList option")[0];
     firstNode.selected = true;
@@ -366,7 +362,8 @@ function SetupAnimationList() {
         animationList.appendChild(option);
     }
 
-    animationList.addEventListener("change", function () {
+    animationList.onchange = () => {
+        console.log(new Date());
         const state = asset.state;
         const skeleton = asset.skeleton;
         const animationName = animationList.value;
@@ -386,7 +383,7 @@ function SetupAnimationList() {
         }
 
         state.setAnimation(trackIndex, animationName, isLoop);
-    });
+    };
 }
 
 function ClearTrack() {
@@ -413,12 +410,13 @@ function SetupSkinList() {
         skinList.appendChild(option);
     }
 
-    skinList.addEventListener("change", function () {
+    skinList.onchange = () => {
+        console.log(new Date());
         const skeleton = asset.skeleton;
         const skinName = skinList.value;
         skeleton.setSkinByName(skinName);
         skeleton.setSlotsToSetupPose();
-    });
+    };
 }
 
 function Render() {
