@@ -334,7 +334,6 @@ function SetupIdolList() {
     }
 
     idolList.onchange = () => {
-        console.log(new Date());
         assetID = idolList.value;
         ClearDragStatus();
         requestAnimationFrame(LoadAsset);
@@ -363,7 +362,6 @@ function SetupAnimationList() {
     }
 
     animationList.onchange = () => {
-        console.log(new Date());
         const state = asset.state;
         const skeleton = asset.skeleton;
         const animationName = animationList.value;
@@ -411,7 +409,6 @@ function SetupSkinList() {
     }
 
     skinList.onchange = () => {
-        console.log(new Date());
         const skeleton = asset.skeleton;
         const skinName = skinList.value;
         skeleton.setSkinByName(skinName);
