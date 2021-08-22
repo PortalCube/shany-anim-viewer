@@ -24,6 +24,7 @@
         "webpack-dev-server": "^4.0.0"
     },
     "dependencies": {
+        "pixi-spine": "^3.0.8",
         "pixi.js": "^6.1.2"
     }
 }
