@@ -1,8 +1,3 @@
-import { Application } from "pixi.js";
+import App from "./app";
 
-const app = new Application({
-    width: 1280,
-    height: 720
-});
-
-document.body.appendChild(app.view);
+new App();
