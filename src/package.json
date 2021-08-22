@@ -1,0 +1,26 @@
+{
+    "name": "shinycolors-spine-viewer",
+    "version": "0.1.0",
+    "description": "Shinycolors Spine Viewer",
+    "main": "index.js",
+    "scripts": {
+        "production": "webpack --mode production --config webpack.config.prod.js",
+        "build": "webpack --mode development --config webpack.config.dev.js",
+        "start": "webpack-dev-server --config webpack.config.dev.js"
+    },
+    "keywords": [
+        "shinycolors",
+        "spine"
+    ],
+    "author": "PortalCube",
+    "license": "MIT",
+    "devDependencies": {
+        "@babel/core": "^7.15.0",
+        "@babel/preset-env": "^7.15.0",
+        "babel-loader": "^8.2.2",
+        "html-webpack-plugin": "^5.3.2",
+        "webpack": "^5.51.1",
+        "webpack-cli": "^4.8.0",
+        "webpack-dev-server": "^4.0.0"
+    }
+}
