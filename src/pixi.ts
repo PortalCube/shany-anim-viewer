@@ -1,7 +1,10 @@
-import { Application, Text, TextStyle } from "pixi.js";
+import { Application, Text, Loader, LoaderResource } from "pixi.js";
 import { Spine } from "pixi-spine";
 
 export default class App extends Application {
+    spineObject: Spine;
+    textObject: Text;
+
     constructor() {
         super({
             width: window.innerWidth,
@@ -13,7 +16,7 @@ export default class App extends Application {
         this.init();
     }
 
-    init() {
+    init(): void {
         this.loader.add(
             "idol",
             // "https://storage.prisism.io/sc/spine/idols/stand/1040010010/data.json"
@@ -24,8 +27,8 @@ export default class App extends Application {
         window.addEventListener("resize", this.onResize.bind(this));
     }
 
-    draw(loader, resources) {
-        this.spineObject = new Spine(this.loader.resources.idol.spineData);
+    draw(loader: Loader, resources: Dict<LoaderResource>): void {
+        this.spineObject = new Spine(resources.idol.spineData);
         try {
             this.spineObject.skeleton.setSkinByName("normal");
         } catch (e) {
@@ -36,24 +39,25 @@ export default class App extends Application {
         this.textObject = new Text("", {
             fontSize: 16,
             fontFamily: "Gosanja",
-            fill: "#94ddff",
+            fill: "#94ddff"
         });
         this.stage.addChild(this.spineObject);
         this.stage.addChild(this.textObject);
         this.onResize();
     }
 
-    onResize() {
+    onResize(): void {
         if (!this.spineObject) {
             return;
         }
 
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        const spineX = Math.round(width * 0.5);
-        const spineY = Math.round(height * 0.6);
+        const width: number = window.innerWidth;
+        const height: number = window.innerHeight;
+        const spineX: number = Math.round(width * 0.5);
+        const spineY: number = Math.round(height * 0.6);
 
         this.renderer.resize(width, height);
+        
         if (height > width) {
             this.spineObject.scale.set(width / 1200);
         } else {

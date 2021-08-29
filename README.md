@@ -4,22 +4,64 @@
 
 https://portalcube.github.io/shany-anim-viewer
 
-## 특징
+This project was bootstrapped with
+[Create React App](https://github.com/facebook/create-react-app).
 
--   아주 아주 심플함
--   얼굴, 입, 눈 애니메이션을 따로 적용시키는 기능
--   드래그 앤 드롭으로 Spine 데이터를 불러오는 기능 (한번에 3개의 데이터를 모두 드롭해야함)
--   배경 색상 지정 가능
+---
 
-## 주의사항
+## Available Scripts
 
--   화면이 작은 기기에서 화질이 저하되는 문제 있음
--   이 저장소는 [Spine 공식 예제](https://github.com/EsotericSoftware/spine-runtimes/tree/3.6/spine-ts/webgl/example)를 수정하여 제작되었습니다.
+In the project directory, you can run:
 
-## 애셋에 관하여
+### `npm start`
 
-애셋 데이터는 저장소에 직접적으로 커밋하지 않고, Release에 첨부하여 업데이트됩니다.
+Runs the app in the development mode.<br /> Open
+[http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-애셋 데이터에 대한 메타데이터는 asset.json에 담겨있으며, 메타데이터는 asset_updater.js로 생성할 수 있습니다. (Node.js가 필요합니다.)
+The page will reload if you make edits.<br /> You will also see any lint errors
+in the console.
 
-현재는 https://shinycolors.info 에서 리소스를 받아서 사용하고 있습니다. (정말 감사합니다!)
+### `npm test`
+
+Launches the test runner in the interactive watch mode.<br /> See the section
+about
+[running tests](https://facebook.github.io/create-react-app/docs/running-tests)
+for more information.
+
+### `npm run build`
+
+Builds the app for production to the `build` folder.<br /> It correctly bundles
+React in production mode and optimizes the build for the best performance.
+
+The build is minified and the filenames include the hashes.<br /> Your app is
+ready to be deployed!
+
+See the section about
+[deployment](https://facebook.github.io/create-react-app/docs/deployment) for
+more information.
+
+### `npm run eject`
+
+**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+
+If you aren’t satisfied with the build tool and configuration choices, you can
+`eject` at any time. This command will remove the single build dependency from
+your project.
+
+Instead, it will copy all the configuration files and the transitive
+dependencies (webpack, Babel, ESLint, etc) right into your project so you have
+full control over them. All of the commands except `eject` will still work, but
+they will point to the copied scripts so you can tweak them. At this point
+you’re on your own.
+
+You don’t have to ever use `eject`. The curated feature set is suitable for
+small and middle deployments, and you shouldn’t feel obligated to use this
+feature. However we understand that this tool wouldn’t be useful if you couldn’t
+customize it when you are ready for it.
+
+## Learn More
+
+You can learn more in the
+[Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+To learn React, check out the [React documentation](https://reactjs.org/).

@@ -3,9 +3,10 @@ body {
     margin: 0;
     padding: 0;
     background-color: #222222;
+    font-family: "Gosanja", Arial, Helvetica, sans-serif;
 }
 
-div {
+#root {
     display: flex;
     position: absolute;
     width: 100%;
@@ -15,4 +16,23 @@ div {
 .menu {
     width: 400px;
     background-color: #ffffff33;
+}
+
+.dressButton {
+    border: 1px solid pink;
+    background-color: #ee888866;
+    height: 100px;
+}
+
+.dressButton > * {
+    float: left;
+}
+
+.dressButton img {
+    vertical-align: middle;
+    margin: 10px auto;
+}
+
+p {
+    margin: 0;
 }
