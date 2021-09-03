@@ -41,6 +41,8 @@ async function Init() {
         alert("WebGL을 사용할 수 없는 환경입니다.");
         return;
     }
+    
+    WebGL.pixelStorei(WebGL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);        
 
     mvp.ortho2d(0, 0, canvas.width - 1, canvas.height - 1);
 
@@ -180,7 +182,7 @@ function LoadAsset() {
 function Load() {
     // Wait until the AssetManager has loaded all resources, then load the skeletons.
     if (assetManager.isLoadingComplete()) {
-        asset = LoadSpine("wait", false);
+        asset = LoadSpine("wait", true);
 
         SetupAnimationList();
         SetupSkinList();
@@ -211,16 +213,8 @@ function LoadSpine(initialAnimation, premultipliedAlpha) {
     // Create a SkeletonJson instance for parsing the .json file.
     const skeletonJson = new spine.SkeletonJson(atlasLoader);
 
-    // 불투명도 버그 수정
-    const jsonData = JSON.parse(assetManager.get(pathJSON || filePath + ".json"));
-    jsonData.slots.forEach((item) => {
-        if (item.blend && item.name !== "eye_shadow_L") {
-            delete item.blend;
-        }
-    });
-
     // Set the scale to apply during parsing, parse the file, and create a new skeleton.
-    const skeletonData = skeletonJson.readSkeletonData(jsonData);
+    const skeletonData = skeletonJson.readSkeletonData(assetManager.get(pathJSON || filePath + ".json"));
     const skeleton = new spine.Skeleton(skeletonData);
     try {
         skeleton.setSkinByName("normal"); // SD 일러스트 기본 스킨
